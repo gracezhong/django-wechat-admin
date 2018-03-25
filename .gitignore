@@ -1,0 +1,11 @@
+# backend
+.DS_Store
+logs/
+migrations
+__pycache__
+static/
+.idea/
+
+# frontend
+node_modules/
+dist/
