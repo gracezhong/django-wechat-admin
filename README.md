@@ -1,5 +1,11 @@
 # django-wechat-admin
 
+# Preview
+
+![效果图](https://github.com/gracezhong/django-wechat-admin/blob/master/backend/screenshots/friend.png)
+![效果图](https://github.com/gracezhong/django-wechat-admin/blob/master/backend/screenshots/group.png)
+![效果图](https://github.com/gracezhong/django-wechat-admin/blob/master/backend/screenshots/message.png)
+
 ## 前言
 该系统是参考[wechat-admin](https://github.com/dongweiming/wechat-admin)搭建的django-wechat-admin。
 主要的技术栈：Django, Django REST, celery, Redis, sse。
