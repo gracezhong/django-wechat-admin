@@ -33,9 +33,6 @@ CELERY_RESULT_BACKEND = 'django-db'
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-# CELERY_ACCEPT_CONTENT = ['json', 'msgpack']
-# CELERY_TASK_SERIALIZER = 'msgpack'
-# CELERY_RESULT_SERIALIZER = 'json'
 
 REDIS_SSEQUEUE_CONNECTION_SETTINGS = {
     'location': 'localhost:6379',

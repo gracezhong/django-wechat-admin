@@ -3,24 +3,18 @@ from datetime import datetime, timedelta
 import json
 import os
 import logging
-# from functools import wraps
-# from functools import partial
 
 # Django library import
-# from django.core.exceptions import ObjectDoesNotExist
 
 # 3rd party library import
-# from wxpy import Bot
 from wxpy.exceptions import ResponseError
-from wxpy.api.chats.user import User as WechatUser
 from wxpy.api.chats.group import Group as WechatGroup
 from wxpy.api.chats.mp import MP as WechatMP
-from wxpy.api.chats.member import Member as WechatMember
 from itchat.signals import scan_qr_code, confirm_login, logged_out
 from django_sse.redisqueue import send_event
 
 # project import
-from .settings import AVATAR_TMPL, WECHAT_AVATAR_PATH, WECHAT_CACHE_PATH, WECHAT_PUID_PATH, QR_PATH
+from .settings import AVATAR_TMPL, WECHAT_AVATAR_PATH
 from .models import User, Group, MP
 from .redis import Notification
 
@@ -31,30 +25,12 @@ logger = logging.getLogger(__name__)
 def _get_fields(cls, exc_fields=None):
     return [i.name for i in cls._meta.get_fields() if not exc_fields or i.name not in exc_fields]
 
-# USER_FIELDS = [i.name for i in User._meta.get_fields()]
-# GROUP_FIELDS = [i.name for i in Group._meta.get_fields() if i.name != 'owner']
-# MP_FIELDS = [i.name for i in MP._meta.get_fields()]
 BOT_TO_DB_OBJ_MAP = {
-    # WechatUser: {'Model': User, 'Fields': _get_fields(User)},
-    # WechatMember: {'Model': User, 'Fields': _get_fields(User)},
     WechatGroup: {'Model': Group, 'Fields': _get_fields(Group, ['owner'])},
     WechatMP: {'Model': MP, 'Fields': _get_fields(MP)},
     # Wechat User, Friend, Member obj will saved to User table
     'Others': {'Model': User, 'Fields': _get_fields(User)},
 }
-
-
-
-# def get_bot():
-#     # logger.info(WECHAT_CACHE_PATH)
-#     # logger.info(WECHAT_PUID_PATH)
-#     # logger.info(QR_PATH)
-#     crt_paths(WECHAT_CACHE_PATH, WECHAT_PUID_PATH, QR_PATH)
-#     bot = Bot(cache_path=WECHAT_CACHE_PATH, console_qr=None, qr_path=QR_PATH)
-#     bot.enable_puid(WECHAT_PUID_PATH)
-#     # bot.messages.max_history = 0
-#     logger.info(bot.self.puid)
-#     return bot
 
 
 def publish(uuid, **kwargs):
@@ -69,23 +45,35 @@ logged_out.connect(publish)
 
 
 def clean_msg_notify(receiver_id):
+    """
+    Delete new message notification key in redis for logged-in user after logout
+
+    :param receiver_id: user PUID retrieved from wxpy.bot
+    """
     Notification.clean_by_receiver_id(receiver_id)
 
 
 def new_msg_notify(receiver_id, clean=False):
+    """
+    Publish new message notification to redis for the user, then FE listener could get new message count
+
+    :param receiver_id: user PUID retrieved from wxpy.bot
+    :param clean: indicate whether to delete the corresponding key in redis
+    """
     if clean:
         clean_msg_notify(receiver_id)
     event_name = 'notification'
     data = {'count': Notification.count_by_receiver_id(receiver_id)}
-    # send_event(event_name=event_name, data=json.dumps(data), channel=receiver_id)
     send_event(event_name=event_name, data=json.dumps(data), channel='wechat')
 
 
 def get_valid_params(query_params):
+    """Get valid query parameters from FE request"""
     return {k: v for k, v in query_params.items() if k not in ['page', 'page_size'] and v}
 
 
 def filter_queryset(queryset, query_params):
+    """Filter queryset result according to FE pass query parameters"""
     query_paras = get_valid_params(query_params)
     if query_paras:
         try:
@@ -95,13 +83,6 @@ def filter_queryset(queryset, query_params):
             logger.error(e)
 
     return queryset
-
-
-# def new_msg_dec(view_func, receiver_id, clean=False):
-#     def wrapped_view(*args, **kwargs):
-#         return view_func(*args, **kwargs)
-#     new_msg_notify(receiver_id, clean)
-#     return wraps(view_func)(wrapped_view)
 
 
 def crt_paths(*dir_list):
@@ -116,6 +97,16 @@ def crt_path(path):
 
 
 def gen_avatar_path(_user, force=False):
+    """
+    Get avatar from User instance's get_avatar method, save the avatar in avatar_path(retrieve from settings)
+
+    :param _user: wxpy User instance
+    :param force: whether force to update the avatar
+    :return:
+        avatar_url: '/static/img/avatars/{}.jpg' where {} to be filled with user puid
+        avatar_path: avatar saved path, retrieve from wechat.settings.py
+        need_update: True/False
+    """
     puid = _user.puid
     need_update = True
     avatar_url = AVATAR_TMPL.format(puid)
@@ -137,9 +128,6 @@ def gen_avatar_path(_user, force=False):
 
 
 def get_user_info(bot):
-    # return crt_or_upd_obj(bot.self)
-    # user_ = bot.self
-    # puid = bot.self.puid
     url, path, need_update = gen_avatar_path(bot.self, force=True)
     try:
         bot.core.get_head_img(picDir=path)
@@ -157,22 +145,20 @@ def get_user_info(bot):
 def get_logged_in_user(bot):
     return crt_or_upd_obj(bot.self)
 
-# def get_logged_in_user(bot):
-    # try:
-    #     return User.objects.get(puid=bot.self.puid)
-    # except ObjectDoesNotExist:
-    #     pass
-
 
 def remove_old_objs(new_obj, values):
+    """
+    After new model instance is created/updated, check whether same values with different PUID exists in database,
+    if yes, delete the old model instances
+
+    :param new_obj: new model instance created/updated for model User/Group/MP
+    :param values: dict which used to save new_obj
+    """
     try:
         values.pop('puid')
-        # logger.info(new_obj)
-        # logger.info(values)
         old_objs = new_obj.__class__.objects.filter(**values).exclude(puid=new_obj.puid)
         logger.info(old_objs)
         for obj in old_objs:
-            # logger.info(obj)
             obj.delete()
             logger.info("Old obj {} is deleted".format(obj))
     except Exception as e:
@@ -180,65 +166,62 @@ def remove_old_objs(new_obj, values):
 
 
 def crt_or_upd_obj(wc_obj):
-    # MODEL_FIELDS = None
-    # logger.info(wc_obj)
+    """
+    Create or update model instance according to wxpy instance
+
+    :param wc_obj: wxpy instance: User, Friend, Group, Member, MP
+    :return: model instance created in database for the wxpy instance
+    """
 
     try:
-        # wxpy Friend, Member, MP inherits wxpy User, so need to check MP first
-        # if isinstance(wc_obj, WechatGroup):
-        #     MODEL_FIELDS = GROUP_FIELDS
-        # elif isinstance(wc_obj, WechatMP):
-        #     MODEL_FIELDS = MP_FIELDS
-        # elif isinstance(wc_obj, WechatUser):
-        #     MODEL_FIELDS = USER_FIELDS
         if wc_obj.__class__ in BOT_TO_DB_OBJ_MAP:
             DB_MAP = BOT_TO_DB_OBJ_MAP[wc_obj.__class__]
         else:
             DB_MAP = BOT_TO_DB_OBJ_MAP['Others']
 
         MODEL_FIELDS = DB_MAP['Fields']
+        values = {field: getattr(wc_obj, field) for field in MODEL_FIELDS if hasattr(wc_obj, field)}
+        # logger.info('Before filter: {}'.format(values))
+        values = {k: v for k, v in values.items() if v}
+        # logger.info('After filter: {}'.format(values))
+        kwargs = {'puid': wc_obj.puid}
 
-        if MODEL_FIELDS:
-            values = {field: getattr(wc_obj, field) for field in MODEL_FIELDS if hasattr(wc_obj, field)}
-            # logger.info('Before filter: {}'.format(values))
-            values = {k: v for k, v in values.items() if v}
-            # logger.info('After filter: {}'.format(values))
-            kwargs = {'puid': wc_obj.puid}
+        obj, created = DB_MAP['Model'].objects.update_or_create(defaults=values, **kwargs)
+        # remove old objs with same values in DB(only PUID is updated)
+        remove_old_objs(obj, values)
 
-            # wxpy Friend, Member, MP inherits wxpy User, so need to check MP first
-            # if isinstance(wc_obj, WechatGroup):
-            #     obj, created = Group.objects.update_or_create(defaults=values, **kwargs)
-            # elif isinstance(wc_obj, WechatMP):
-            #     obj, created = MP.objects.update_or_create(defaults=values, **kwargs)
-            # elif isinstance(wc_obj, WechatUser):
-            #     obj, created = User.objects.update_or_create(defaults=values, **kwargs)
-            obj, created = DB_MAP['Model'].objects.update_or_create(defaults=values, **kwargs)
+        if created:
+            logger.info("{} {}: {} created in DB.".format(obj.__class__.__name__, obj.puid, obj.nick_name))
+        else:
+            logger.info("{} {}: {} updated in DB.".format(obj.__class__.__name__, obj.puid, obj.nick_name))
 
-            # remove old objs with same values in DB(only PUID is updated)
-            remove_old_objs(obj, values)
+        if obj.__class__.__name__ in ['User', 'Group']:
+            url, *_ = gen_avatar_path(wc_obj)
+            obj.avatar = url
+            obj.save()
 
-            if created:
-                logger.info("{} {}: {} created in DB.".format(obj.__class__.__name__, obj.puid, obj.nick_name))
-            else:
-                logger.info("{} {}: {} updated in DB.".format(obj.__class__.__name__, obj.puid, obj.nick_name))
-
-            if obj.__class__.__name__ in ['User', 'Group']:
-                url, *_ = gen_avatar_path(wc_obj)
-                obj.avatar = url
-                obj.save()
-
-            return obj
+        return obj
     except Exception as e:
         logger.error('Error: {}'.format(e))
 
 
 class ChatAdapter(object):
+    """
+    Adapter for wxpy Bot/Group and model User/Group instance,
+    accept different methods to retrieve friends, groups, mps, members
+    """
     def __init__(self, obj, search_method, upd_method=None, update=False):
-        # obj : bot, user, group object
-        # method :
-        #   bot methods: bot.friends(), bot.groups(), bot.mps(), bot.group()[0].members,
-        #   model methods: user.friends(), user.groups(), user.mps(), group.members()
-        # update : indicate whether bot refresh the contacts
+        """
+        :param obj: wxpy Bot/Group or model User/Group instance
+        :param search_method:
+            for wxpy Bot/Group instance: bot.friends, bot.groups, bot.mps, group.members
+            for model User/Group instance: user.friends, user.groups, user.mps, group.members
+        :param upd_method:
+            Model User instance method: user.del_friends, user.add_friend, user.del_groups, user.add_group,
+                user.del_mps, user.add_mp
+            Model Group instance method: group.del_members, group.add_member
+        :param update: reserved for Bot instance to indicate whether to force updating wechat contacts
+        """
         self.obj = obj
         self.search_method = search_method
         self.upd_method = upd_method
@@ -266,19 +249,6 @@ class ChatAdapter(object):
         return set([u.puid for u in self.get_objs() if u.puid])
 
     def do_update(self, objs):
-        # model operation
-        #   user.del_friends(deleted_objs)
-        #   user.add_friend(new_obj)
-        #   user.del_friends(deleted_friends)
-        #   user.add_friend(new_user)
-        #   user.del_mps(deleted_mps)
-        #   user.add_mp(new_mp)
-        #   user.del_groups(deleted_groups)
-        #   user.add_group(group)
-        #   group.del_members(deleted_members)
-        #   group.add_member(new_user)
-        # bot operation
-        #   xxxx
         try:
             self.upd_method(objs)
         except Exception as e:
@@ -299,23 +269,13 @@ class CompareClass(object):
     def get_old_puids(self):
         return self.db_adapter.get_puids()
 
-    def get_add_puids(self):
-        return self._new_puids.difference(self._old_puids)
-
-    def get_same_puids(self):
-        return self._new_puids.intersection(self._old_puids)
-
     def get_deleted_puids(self):
         return self._old_puids.difference(self._new_puids)
-
-    def get_db_same_objs(self):
-        return self._get_db_objs(self.get_same_puids())
 
     def get_db_delete_objs(self):
         return self._get_db_objs(self.get_deleted_puids())
 
     def _get_db_objs(self, puids):
-        # logger.info(self.db_adapter.search_method.__name__)
         if self.db_adapter.search_method.__name__ == 'groups':
             objs = Group.objects.filter(puid__in=puids)
         elif self.db_adapter.search_method.__name__ == 'mps':
@@ -325,12 +285,3 @@ class CompareClass(object):
             objs = User.objects.filter(puid__in=puids)
 
         return objs
-
-    def _get_bot_objs(self, puids):
-        # logger.info(self.bot_adapter.search_method.__name__)
-        if puids:
-            pass
-            # search in the results
-            # return self.bot_adapter.get_objs().search
-        else:
-            return self.bot_adapter.get_objs()

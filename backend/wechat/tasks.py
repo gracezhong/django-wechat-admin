@@ -10,7 +10,7 @@ from wxpy.signals import stopped
 
 # project import
 from dj_wechat_admin.celery import app
-from .globals import current_bot, get_bot
+from .globals import get_bot
 from .func import ChatAdapter, CompareClass, get_logged_in_user, crt_or_upd_obj
 from .redis import r, LISTENER_TASK_KEY
 
@@ -25,17 +25,10 @@ def restart_listener(sender, **kwarg):
     r.set(LISTENER_TASK_KEY, task_id)
 
 logger = get_task_logger('celery_tasks')
-# bot = current_bot
 bot = get_bot()
 
 logged_out.connect(restart_listener)
-# stopped.connect(restart_listener)
-
-
-@shared_task
-def add(x, y):
-    logger.info("add test.")
-    return x + y
+stopped.connect(restart_listener)
 
 
 @shared_task
@@ -54,13 +47,11 @@ def bot_msg_listener():
     logger.info('Global bot instance:{}'.format(bot))
     logger.info('Global bot registered info:{}'.format(bot.registered))
     logger.info('Global bot listening thread:{}'.format(bot.listening_thread))
-    # logger.info(isinstance(bot.listening_thread, Thread))
 
     logger.info('Msg listener bot PUID:{}'.format(_bot.self.puid))
     logger.info('Msg listener bot instance:{}'.format(_bot))
     logger.info('Msg listener bot registered info:{}'.format(_bot.registered))
     logger.info('Msg listener bot listening thread:{}'.format(_bot.listening_thread))
-    # logger.info(isinstance(_bot.listening_thread, Thread))
     _bot.join()
 
 
@@ -89,8 +80,20 @@ def _update_group(user, update):
 
 
 def _update_chatobj(bot_adapter, db_adapter, del_method, add_method):
-    # logger.info(bot_adapter)
-    # logger.info(db_adapter)
+    """
+    Retrieve new contact list from bot_adapter and existing contact list from db_adapter,
+    delete contacts which exist in DB but not in bot, then create/update new contacts in DB
+    according to latest contact list retrieved from bot_adapter
+
+    :param bot_adapter: ChatAdapter instance initialized with wxpy Bot/Group instance
+    :param db_adapter: ChatAdapter instance initialized with model User/Group instance
+    :param del_method:
+        model User method: user.del_friends, user.del_groups, user.del_mps
+        model Group method: group.del_members
+    :param add_method:
+        model User method: user.add_friend, user.add_group, user.add_mp
+        model Group method: group.add_member
+    """
     try:
         com_cls = CompareClass(bot_adapter, db_adapter)
         deleted_objs = com_cls.get_db_delete_objs()

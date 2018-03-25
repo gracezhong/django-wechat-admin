@@ -23,8 +23,7 @@ all_types = [k.capitalize() for k in dir(consts)
              if k.isupper() and k not in ('SYSTEM', 'FEMALE', 'MALE')]
 
 
-# @bot.register(chats=monitor_chats, except_self=False)
-@bot.register(msg_types=all_types, except_self=False)
+@bot.register(chats=monitor_chats, msg_types=all_types, except_self=False)
 def new_messages(msg):
     logger.info(msg.text)
     logger.info(msg.type)
@@ -56,7 +55,6 @@ def new_messages(msg):
                         .format(sender_id, msg.sender.nick_name, msg.sender.remark_name))
 
         receiver_id = msg.receiver.puid
-        logger.info('group_id: {}'.format(group_id))
         logger.info('receiver_id: {}'.format(receiver_id))
         sender = User.objects.get(puid=sender_id)
         logger.info('sender {}'.format(sender))
