@@ -14,22 +14,20 @@
 
 		<!--列表-->
 		<el-table :data="msgs" highlight-current-row v-loading="listLoading" @selection-change="selsChange" style="width: 100%;">
-			<el-table-column type="selection" width="55">
+			<el-table-column type="selection" min-width="55">
 			</el-table-column>
-			<el-table-column prop="group" label="群聊" width="160">
+			<el-table-column prop="group" label="群聊" min-width="160">
 				<template slot-scope="scope">
 					<div v-if="!isEmptyObject(scope.row.group)">
 						<img :src="formatAvatar(scope.row.group)" class="avatar" v-if="scope.row.group.avatar"/>
-						<!--<a :href="'/#/group/' + scope.row.group.id" class="nick-name">{{scope.row.group.nick_name}}</a>-->
 						{{scope.row.group.nick_name}}
 					</div>
 				</template>
 			</el-table-column>
-			<el-table-column prop="sender" label="发送者" width="160">
+			<el-table-column prop="sender" label="发送者" min-width="160">
 				<template slot-scope="scope">
 					<div v-if="!isEmptyObject(scope.row.sender)">
 						<img :src="formatAvatar(scope.row.sender)" class="avatar" v-if="scope.row.sender.avatar"/>
-						<!--<a href="#" class="nick-name">{{scope.row.sender.nick_name}}</a>-->
 						{{scope.row.sender.nick_name}}
 					</div>
 				</template>
@@ -55,7 +53,7 @@
 					<div v-else>{{ scope.row.type == 3 ? '名片：' : '' }} {{scope.row.content}}</div>
 				</template>
 			</el-table-column>
-			<el-table-column prop="receive_time" label="时间" width="300" sortable>
+			<el-table-column prop="receive_time" label="时间" min-width="180" sortable show-overflow-tooltip>
 			</el-table-column>
 			<el-table-column label="操作" min-width="150">
 				<template slot-scope="scope">
@@ -66,7 +64,6 @@
 
 		<!--工具条-->
 		<el-col :span="24" class="toolbar">
-			<!--<el-button type="danger" @click="batchRemove" :disabled="this.sels.length===0">删除消息</el-button>-->
 			<el-pagination background layout="prev, pager, next" @size-change="handleSizeChange" @current-change="handleCurrentChange" :page-size="pageSize" :total="total" style="float:right;">
 			</el-pagination>
 		</el-col>
@@ -75,7 +72,6 @@
 		<el-dialog title="发送消息" v-model="msgFormVisible" :close-on-click-modal="false">
 			<el-form :model="msgForm" label-width="80px" :rules="msgFormRules" ref="msgForm">
 				<el-form-item label="发消息给" prop="nick_name">
-					<!--<el-input v-model="msgForm.receiver.nick_name" auto-complete="off"></el-input>-->
 					{{ msgForm.nick_name }}
 				</el-form-item>
 				<el-form-item label="消息">

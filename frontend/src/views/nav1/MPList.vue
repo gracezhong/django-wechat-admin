@@ -9,9 +9,6 @@
 				<el-form-item>
 					<el-button type="primary" v-on:click="getMPs">查询</el-button>
 				</el-form-item>
-				<el-form-item>
-					<el-button type="primary" @click="handleAdd">新增</el-button>
-				</el-form-item>
 			</el-form>
 		</el-col>
 
@@ -27,7 +24,7 @@
 			</el-table-column>
 			<el-table-column prop="city" label="城市" width="100" sortable>
 			</el-table-column>
-			<el-table-column prop="signature" label="个性签名" min-width="200" sortable>
+			<el-table-column prop="signature" label="个性签名" min-width="200" sortable show-overflow-tooltip>
 			</el-table-column>
 			<el-table-column label="操作" min-width="60">
 				<template slot-scope="scope">
@@ -75,36 +72,6 @@
 			</div>
 		</el-dialog>
 
-		<!--新增界面-->
-		<el-dialog title="新增" v-model="addFormVisible" :close-on-click-modal="false">
-			<el-form :model="addForm" label-width="80px" :rules="addFormRules" ref="addForm">
-				<el-form-item label="用户名" prop="nick_name">
-					<el-input v-model="addForm.nick_name" auto-complete="off"></el-input>
-				</el-form-item>
-				<el-form-item label="密码" prop="password">
-					<el-input type="password" v-model="addForm.password" auto-complete="off"></el-input>
-				</el-form-item>
-				<el-form-item label="员工">
-					<el-radio-group v-model="addForm.is_staff">
-						<el-radio class="radio" :label="1">是</el-radio>
-						<el-radio class="radio" :label="0">否</el-radio>
-					</el-radio-group>
-				</el-form-item>
-				<el-form-item label="邮箱">
-					<el-input v-model="addForm.email" auto-complete="off"></el-input>
-				</el-form-item>
-				<el-form-item label="手机">
-					<el-input v-model="addForm.phone" auto-complete="off"></el-input>
-				</el-form-item>
-				<el-form-item label="自我介绍">
-					<el-input type="textarea" v-model="addForm.description"></el-input>
-				</el-form-item>
-			</el-form>
-			<div slot="footer" class="dialog-footer">
-				<el-button @click.native="addFormVisible = false">取消</el-button>
-				<el-button type="primary" @click.native="addSubmit" :loading="addLoading">提交</el-button>
-			</div>
-		</el-dialog>
 	</section>
 </template>
 
@@ -140,24 +107,10 @@
 					phone: null
 				},
 
-				addFormVisible: false,//新增界面是否显示
-				addLoading: false,
-				addFormRules: {
-					nick_name: [{ required: true, message: '请输入用户名', trigger: 'blur' }]
-				},
-				//新增界面数据
-				addForm: {
-                    nick_name: '',
-                    is_staff: -1,
-                    email: null,
-                    description: null,
-                    phone: null
-				}
-
 			}
 		},
 		methods: {
-			//员工显示转换
+			//显示转换
             formatSex: function(row) {
                 return row.sex == 1 ? '男' : row.sex == 2? '女' : '';
 			},
@@ -218,94 +171,16 @@
 				// console.log(this.editForm);
                 this.editFormVisible = true;
 			},
-			//显示新增界面
-			handleAdd: function () {
-				// this.addForm = {
-                 //    nick_name: '',
-                 //    email: null,
-                 //    description: null,
-                 //    phone: null
-				// };
-                this.addFormVisible = true;
-			},
 			//编辑
 			editSubmit: function () {
 				this.$refs.editForm.validate((valid) => {
 					if (valid) {
 						this.$confirm('确认提交吗？', '提示', {}).then(() => {
 							this.editLoading = true;
-							//NProgress.start();
 							let para = Object.assign({}, this.editForm);
 							// console.log(this.editForm);
                             console.log('Edit MP info parameters:');
 							console.log(para);
-							// editUser(para).then((res) => {
-							//     console.log('Response from server:');
-							//     console.log(res);
-                            //
-                             //    if (res.status<400) {
-                             //        this.editLoading = false;
-                             //        //NProgress.done();
-                             //        this.$message({
-                             //            message: '提交成功',
-                             //            type: 'success',
-                             //            showClose: true
-                             //        });
-                             //        this.$refs['editForm'].resetFields();
-                             //        this.editFormVisible = false;
-                             //        this.getMPs();
-							// 	}
-                             //    else {
-                             //        this.editLoading = false;
-                             //        //NProgress.done();
-                             //        this.$message({
-                             //            message: res.data,
-                             //            type: 'error',
-                             //            showClose: true
-                             //        });
-							// 	}
-                            //
-                            //
-							// });
-						});
-					}
-				});
-			},
-			//新增
-			addSubmit: function () {
-				this.$refs.addForm.validate((valid) => {
-					if (valid) {
-						this.$confirm('确认提交吗？', '提示', {}).then(() => {
-							this.addLoading = true;
-							//NProgress.start();
-							let para = Object.assign({}, this.addForm);
-							console.log('Add new MP');
-							console.log(para);
-							// para.birth = (!para.birth || para.birth == '') ? '' : util.formatDate.format(new Date(para.birth), 'yyyy-MM-dd');
-							// addUser(para).then((res) => {
-							//     console.log(res);
-							//     if (res.errors) {
-                             //        this.addLoading = false;
-							//         this.$message( {
-							// 			message: res.errors,
-							// 			type: 'error'
-							// 		});
-							// 	}
-							// 	else {
-							//         console.log('User is added successfully.');
-							//         console.log(res);
-                             //        this.addLoading = false;
-                             //        //NProgress.done();
-                             //        this.$message({
-                             //            message: '提交成功',
-                             //            type: 'success'
-                             //        });
-                             //        this.$refs['addForm'].resetFields();
-                             //        this.addFormVisible = false;
-                             //        this.getMPs();
-							// 	}
-                            //
-							// });
 						});
 					}
 				});
@@ -320,21 +195,9 @@
 					type: 'warning'
 				}).then(() => {
 					this.listLoading = true;
-					//NProgress.start();
 					let para = { ids: ids };
 					console.log(para.ids);
-					// batchRemoveUser(para).then((res) => {
-					// 	this.listLoading = false;
-					// 	//NProgress.done();
-					// 	this.$message({
-					// 		message: '删除成功',
-					// 		type: 'success'
-					// 	});
-					// 	this.getMPs();
-					// });
-				}).catch(() => {
-
-				});
+				})
 			}
 		},
 		mounted() {

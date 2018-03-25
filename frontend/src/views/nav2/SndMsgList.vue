@@ -47,7 +47,6 @@
 					<!-- Recording -->
 					<div v-else-if="scope.row.type == 7">
 						<audio controls="controls"><source :src="formatSource(scope.row)" /></audio>
-						<!--<embed height="100" width="100" :src="formatSource(scope.row)" />-->
 					</div>
 					<!-- Video-->
 					<div v-else-if="scope.row.type == 9">
@@ -57,7 +56,7 @@
 					<div v-else>{{ scope.row.type == 3 ? '名片：' : '' }} {{scope.row.content}}</div>
 				</template>
 			</el-table-column>
-			<el-table-column prop="receive_time" label="时间" width="300" sortable>
+			<el-table-column prop="receive_time" label="时间" min-width="180" sortable show-overflow-tooltip>
 			</el-table-column>
 			<el-table-column label="操作" min-width="150">
 				<template slot-scope="scope">

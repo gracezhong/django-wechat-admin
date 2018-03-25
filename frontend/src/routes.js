@@ -36,6 +36,14 @@ let routes = [
         iconCls: 'fa fa-id-card-o',//图标样式class
         children: [
             { path: '/grouplist', component: GroupList, name: '群组列表' },
+        ]
+    },
+    {
+        path: '/',
+        component: Home,
+        name: '公众号',
+        iconCls: 'fa fa-id-card-o',//图标样式class
+        children: [
             { path: '/mplist', component: MPList, name: '公众号' },
         ]
     },

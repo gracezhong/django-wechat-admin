@@ -23,9 +23,9 @@
 					<img :src="formatAvatar(scope.row)" class="avatar"/>
 				</template>
 			</el-table-column>
-			<el-table-column prop="nick_name" label="昵称" min-width="100" sortable>
+			<el-table-column prop="nick_name" label="昵称" min-width="100" sortable show-overflow-tooltip>
 			</el-table-column>
-			<el-table-column prop="remark_name" label="备注名" min-width="100" sortable>
+			<el-table-column prop="remark_name" label="备注名" min-width="100" sortable show-overflow-tooltip>
 			</el-table-column>
 			<el-table-column prop="sex" label="性别" min-width="70" :formatter="formatSex" sortable>
 			</el-table-column>
@@ -33,7 +33,7 @@
 			</el-table-column>
 			<el-table-column prop="city" label="城市" width="100" sortable>
 			</el-table-column>
-			<el-table-column prop="signature" label="个性签名" min-width="200" sortable>
+			<el-table-column prop="signature" label="个性签名" min-width="200" sortable show-overflow-tooltip>
 			</el-table-column>
 			<el-table-column label="操作" min-width="150">
 				<template slot-scope="scope">
@@ -324,10 +324,10 @@
 
 <style scoped>
 	.avatar {
-		width: 40px;
-		height: 40px;
+		width: 30px;
+		height: 30px;
 		/*border-radius: 20px;*/
 		border-radius: 5px;
-		margin: 10px 0px 5px 0px;
+		margin: 5px 0px 0px 0px;
 	}
 </style>

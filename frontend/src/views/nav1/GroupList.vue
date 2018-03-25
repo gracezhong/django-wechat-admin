@@ -28,11 +28,10 @@
 			</el-table-column>
 			<el-table-column prop="nick_name" label="昵称" width="300" sortable>
 			</el-table-column>
-			<el-table-column prop="owner" label="群主" width="160">
+			<el-table-column prop="owner" label="群主" min-width="160">
 				<template slot-scope="scope">
 					<div v-if="!isEmptyObject(scope.row.owner)">
 						<img :src="formatAvatar(scope.row.owner)" class="avatar" v-if="scope.row.owner.avatar"/>
-						<!--<a href="#" class="nick-name">{{scope.row.sender.nick_name}}</a>-->
 						{{scope.row.owner.nick_name}}
 					</div>
 				</template>
@@ -41,14 +40,14 @@
 			<el-table-column label="操作" min-width="150">
 				<template slot-scope="scope">
 					<el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
-					<el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">删除</el-button>
+					<el-button type="primary" size="small" @click="handleDel(scope.$index, scope.row)">发消息</el-button>
 				</template>
 			</el-table-column>
 		</el-table>
 
 		<!--工具条-->
 		<el-col :span="24" class="toolbar">
-			<el-button type="danger" @click="batchRemove" :disabled="this.sels.length===0">批量删除</el-button>
+			<el-button type="danger" @click="batchRemove" :disabled="this.sels.length===0">批量发送</el-button>
 			<el-pagination background layout="prev, pager, next" @size-change="handleSizeChange" @current-change="handleCurrentChange" :page-size="pageSize" :total="total" style="float:right;">
 			</el-pagination>
 		</el-col>
@@ -252,9 +251,7 @@
 					if (valid) {
 						this.$confirm('确认提交吗？', '提示', {}).then(() => {
 							this.editLoading = true;
-							//NProgress.start();
 							let para = Object.assign({}, this.editForm);
-							// console.log(this.editForm);
                             console.log('Edit user info parameters:');
 							console.log(para);
 							editUser(para).then((res) => {
@@ -295,11 +292,9 @@
 					if (valid) {
 						this.$confirm('确认提交吗？', '提示', {}).then(() => {
 							this.addLoading = true;
-							//NProgress.start();
 							let para = Object.assign({}, this.addForm);
 							console.log('Add new user');
 							console.log(para);
-							// para.birth = (!para.birth || para.birth == '') ? '' : util.formatDate.format(new Date(para.birth), 'yyyy-MM-dd');
 							addUser(para).then((res) => {
 							    console.log(res);
 							    if (res.errors) {
@@ -313,7 +308,6 @@
 							        console.log('User is added successfully.');
 							        console.log(res);
                                     this.addLoading = false;
-                                    //NProgress.done();
                                     this.$message({
                                         message: '提交成功',
                                         type: 'success'
@@ -343,7 +337,6 @@
 					console.log(para.ids);
 					batchRemoveUser(para).then((res) => {
 						this.listLoading = false;
-						//NProgress.done();
 						this.$message({
 							message: '删除成功',
 							type: 'success'
@@ -364,9 +357,9 @@
 
 <style scoped>
 	.avatar {
-		width: 40px;
-		height: 40px;
+		width: 30px;
+		height: 30px;
 		border-radius: 5px;
-		margin: 10px 0px 5px 0px;
+		margin: 5px 0px 0px 0px;
 	}
 </style>

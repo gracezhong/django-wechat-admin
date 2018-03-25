@@ -46,8 +46,10 @@ def login(request):
         serializer = UserSerializer(instance=user)
         data = {'type': 'logged_in', 'user': copy.deepcopy(serializer.data)}
         send_event(event_name='login', data=json.dumps(data), channel='wechat')
-        task_id = app.send_task('wechat.tasks.bot_msg_listener')
-        r.set(LISTENER_TASK_KEY, task_id)
+        # task_id = r.get(LISTENER_TASK_KEY)
+        # if task_id:
+        # task_id = app.send_task('wechat.tasks.bot_msg_listener')
+        # r.set(LISTENER_TASK_KEY, task_id)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)

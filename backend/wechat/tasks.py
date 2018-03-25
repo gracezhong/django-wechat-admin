@@ -21,8 +21,8 @@ def restart_listener(sender, **kwarg):
     if task_id:
         logger.info(str(task_id, 'utf-8'))
         app.control.revoke(str(task_id, 'utf-8'), terminate=True)
-    task_id = app.send_task('wechat.tasks.bot_msg_listener')
-    r.set(LISTENER_TASK_KEY, task_id)
+    # task_id = app.send_task('wechat.tasks.bot_msg_listener')
+    # r.set(LISTENER_TASK_KEY, task_id)
 
 logger = get_task_logger('celery_tasks')
 bot = get_bot()
@@ -41,18 +41,20 @@ def retrieve_data(update=False):
 @shared_task
 def bot_msg_listener():
     # 不用全局的bot，因为在import listener的过程中会
-    # 注册各种函数（处理自动加群、接受消息、踢人以及各种插件功能）
-    from wechat.msglistener import bot as _bot
-    logger.info('Global bot PUID:{}'.format(bot.self.puid))
-    logger.info('Global bot instance:{}'.format(bot))
-    logger.info('Global bot registered info:{}'.format(bot.registered))
-    logger.info('Global bot listening thread:{}'.format(bot.listening_thread))
+    # 注册各种函数（处理自动加群、接受消息、踢人以及各种插件功能
+    task_id = r.get(LISTENER_TASK_KEY)
+    if task_id:
+        from wechat.msglistener import bot as _bot
+        logger.info('Global bot PUID:{}'.format(bot.self.puid))
+        logger.info('Global bot instance:{}'.format(bot))
+        logger.info('Global bot registered info:{}'.format(bot.registered))
+        logger.info('Global bot listening thread:{}'.format(bot.listening_thread))
 
-    logger.info('Msg listener bot PUID:{}'.format(_bot.self.puid))
-    logger.info('Msg listener bot instance:{}'.format(_bot))
-    logger.info('Msg listener bot registered info:{}'.format(_bot.registered))
-    logger.info('Msg listener bot listening thread:{}'.format(_bot.listening_thread))
-    _bot.join()
+        logger.info('Msg listener bot PUID:{}'.format(_bot.self.puid))
+        logger.info('Msg listener bot instance:{}'.format(_bot))
+        logger.info('Msg listener bot registered info:{}'.format(_bot.registered))
+        logger.info('Msg listener bot listening thread:{}'.format(_bot.listening_thread))
+        _bot.join()
 
 
 def _retrieve_data(user, update=False):
@@ -101,18 +103,18 @@ def _update_chatobj(bot_adapter, db_adapter, del_method, add_method):
         db_adapter.do_update(deleted_objs)
 
         i = 1
-        if add_method.__name__ == 'add_group':
-            break_num = 1
-        else:
-            break_num = 5
+        # if add_method.__name__ == 'add_group':
+        #     break_num = 1
+        # else:
+        #     break_num = 5
 
         # logger.info("只保存{}个新记录".format(break_num))
         db_adapter.upd_method = add_method
         # logger.info(db_adapter.upd_method.__name__)
 
         for bot_obj in bot_adapter.get_objs():
-            if add_method.__name__ != 'add_member' and i > break_num:
-                break
+            # if add_method.__name__ != 'add_member' and i > break_num:
+            #     break
 
             logger.info("保存{}的信息".format(bot_obj))
             db_obj = crt_or_upd_obj(bot_obj)
